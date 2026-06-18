@@ -1,0 +1,175 @@
+/*
+    inplace_string - 容量固定の文字列型
+    Copyright (C) 2026 - Denkousi
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include <compare>
+#include <initializer_list>
+#include <inplace_vector>
+#include <string_view>
+
+namespace std::experimental
+{
+template <typename charT, typename traits = char_traits<charT>, size_t N = 0>
+struct basic_inplace_string
+{
+  private:
+    template <typename CharT>
+    using implementation_defined = std::string_view<CharT>::const_iterator;
+
+  public:
+    // types
+    using traits_type = traits;
+    using value_type = charT;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using const_iterator = implementation_defined<charT>; // see [string.inplace.iterators]
+    using iterator = const_iterator;
+    using const_reverse_iterator = reverse_iterator<const_iterator>;
+    using reverse_iterator = const_reverse_iterator;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    static constexpr size_type npos = size_type(-1);
+
+    // [string.inplace.cons], construction and assignment
+    constexpr basic_inplace_string() noexcept;
+    constexpr basic_inplace_string(const basic_inplace_string&) noexcept = default;
+    constexpr basic_inplace_string& operator=(const basic_inplace_string&) noexcept = default;
+    constexpr basic_inplace_string(const charT* str);
+    basic_inplace_string(nullptr_t) = delete;
+    constexpr basic_inplace_string(const charT* str, size_type len);
+    template <class It, class End>
+    constexpr basic_inplace_string(It begin, End end);
+    template <class R>
+    constexpr explicit basic_inplace_string(R&& r);
+
+    // [string.inplace.iterators], iterator support
+    constexpr const_iterator begin() const noexcept;
+    constexpr const_iterator end() const noexcept;
+    constexpr const_iterator cbegin() const noexcept;
+    constexpr const_iterator cend() const noexcept;
+    constexpr const_reverse_iterator rbegin() const noexcept;
+    constexpr const_reverse_iterator rend() const noexcept;
+    constexpr const_reverse_iterator crbegin() const noexcept;
+    constexpr const_reverse_iterator crend() const noexcept;
+
+    // [string.inplace.capacity], capacity
+    constexpr size_type size() const noexcept;
+    constexpr size_type length() const noexcept;
+    constexpr size_type max_size() const noexcept;
+    constexpr void resize(size_type sz); // freestanding-deleted
+    constexpr void resize(size_type sz,
+                          const charT& c); // freestanding-deleted
+    constexpr size_type capacity() const noexcept;
+    constexpr void reserve(size_type res_arg);
+    constexpr void shrink_to_fit();
+    constexpr bool empty() const noexcept;
+
+    // [string.inplace.access], element access
+    constexpr const_reference operator[](size_type pos) const;
+    constexpr const_reference at(size_type pos) const; // freestanding-deleted
+    constexpr const_reference front() const;
+    constexpr const_reference back() const;
+    constexpr const charT* data() const noexcept;
+
+    // [string.inplace.modifiers], modifiers
+    constexpr basic_inplace_string& operator+=(const basic_string& str);
+    template <class T>
+    constexpr basic_inplace_string& operator+=(const T& t);
+    constexpr basic_inplace_string& operator+=(const charT* s);
+    constexpr basic_inplace_string& operator+=(charT c);
+    constexpr basic_inplace_string& operator+=(initializer_list<charT>);
+    constexpr void remove_prefix(size_type n);
+    constexpr void remove_suffix(size_type n);
+    constexpr void swap(basic_inplace_string& s) noexcept;
+
+    // [string.inplace.ops], string operations
+    constexpr size_type copy(charT* s, size_type n,
+                             size_type pos = 0) const; // freestanding-deleted
+
+    constexpr basic_inplace_string substr(size_type pos = 0,
+                                          size_type n = npos) const; // freestanding-deleted
+    constexpr basic_inplace_string subview(size_type pos = 0,
+                                           size_type n = npos) const; // freestanding-deleted
+
+    constexpr int compare(basic_inplace_string s) const noexcept;
+    constexpr int compare(size_type pos1, size_type n1,
+                          basic_inplace_string s) const; // freestanding-deleted
+    constexpr int compare(size_type pos1, size_type n1, basic_inplace_string s, size_type pos2,
+                          size_type n2) const; // freestanding-deleted
+    constexpr int compare(const charT* s) const;
+    constexpr int compare(size_type pos1, size_type n1,
+                          const charT* s) const; // freestanding-deleted
+    constexpr int compare(size_type pos1, size_type n1, const charT* s,
+                          size_type n2) const; // freestanding-deleted
+
+    constexpr bool starts_with(basic_inplace_string x) const noexcept;
+    constexpr bool starts_with(charT x) const noexcept;
+    constexpr bool starts_with(const charT* x) const;
+    constexpr bool ends_with(basic_inplace_string x) const noexcept;
+    constexpr bool ends_with(charT x) const noexcept;
+    constexpr bool ends_with(const charT* x) const;
+
+    constexpr bool contains(basic_inplace_string x) const noexcept;
+    constexpr bool contains(charT x) const noexcept;
+    constexpr bool contains(const charT* x) const;
+
+    // [string.inplace.find], searching
+    constexpr size_type find(basic_inplace_string s, size_type pos = 0) const noexcept;
+    constexpr size_type find(charT c, size_type pos = 0) const noexcept;
+    constexpr size_type find(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find(const charT* s, size_type pos = 0) const;
+    constexpr size_type rfind(basic_inplace_string s, size_type pos = npos) const noexcept;
+    constexpr size_type rfind(charT c, size_type pos = npos) const noexcept;
+    constexpr size_type rfind(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type rfind(const charT* s, size_type pos = npos) const;
+
+    constexpr size_type find_first_of(basic_inplace_string s, size_type pos = 0) const noexcept;
+    constexpr size_type find_first_of(charT c, size_type pos = 0) const noexcept;
+    constexpr size_type find_first_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_first_of(const charT* s, size_type pos = 0) const;
+    constexpr size_type find_last_of(basic_inplace_string s, size_type pos = npos) const noexcept;
+    constexpr size_type find_last_of(charT c, size_type pos = npos) const noexcept;
+    constexpr size_type find_last_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_last_of(const charT* s, size_type pos = npos) const;
+    constexpr size_type find_first_not_of(basic_inplace_string s, size_type pos = 0) const noexcept;
+    constexpr size_type find_first_not_of(charT c, size_type pos = 0) const noexcept;
+    constexpr size_type find_first_not_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_first_not_of(const charT* s, size_type pos = 0) const;
+    constexpr size_type find_last_not_of(basic_inplace_string s, size_type pos = npos) const noexcept;
+    constexpr size_type find_last_not_of(charT c, size_type pos = npos) const noexcept;
+    constexpr size_type find_last_not_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const;
+
+  private:
+    inplace_vector<basic_string_view<charT>, N> data; // exposition only
+};
+
+// clang-format off
+inline namespace literals::inline string_literals
+{
+    // [basic.inplace.literals], suffix for basic_inplace_string literals
+    constexpr string operator""si(const char* str, size_t len);
+    constexpr u8string operator""si(const char8_t* str, size_t len);
+    constexpr u16string operator""si(const char16_t* str, size_t len);
+    constexpr u32string operator""si(const char32_t* str, size_t len);
+    constexpr wstring operator""si(const wchar_t* str, size_t len);
+} // namespace literals::string_literals
+
+// clang-format on
+} // namespace experimental
