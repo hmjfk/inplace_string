@@ -1,4 +1,4 @@
-## 容量固定の文字列型「inplace_string」
+# 容量固定の文字列型「inplace_string」
 ## はじめに
 C++26では、`std::vector`の積み上げ領域版`std::inplace_vector`が追加される。ということは、独立環境でも動的配列が使えるようになるのである。
 
