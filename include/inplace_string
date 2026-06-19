@@ -15,14 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
 #include <compare>
 #include <initializer_list>
-#include <inplace_vector>
-#include <string_view>
+#include <iterator>
+#include <optional>
+#include <string>
 
 namespace std::experimental
 {
+/*
+basic_inplace_string<charT>型は、inplace_vector<T>型の記憶域戦略に基づくbasic_string<charT>型である。
+それ以外は、basic_string<charT>と同じ機能をもつ。
+*/
 template <typename charT, typename traits = char_traits<charT>, size_t N = 0>
 struct basic_inplace_string
 {
@@ -39,9 +43,9 @@ struct basic_inplace_string
     using reference = value_type&;
     using const_reference = const value_type&;
     using const_iterator = implementation_defined<charT>; // see [string.inplace.iterators]
-    using iterator = const_iterator;
-    using const_reverse_iterator = reverse_iterator<const_iterator>;
-    using reverse_iterator = const_reverse_iterator;
+    using iterator = implementation_defined<charT>;       // see [string.inplace.iterators]
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
     using size_type = size_t;
     using difference_type = ptrdiff_t;
     static constexpr size_type npos = size_type(-1);
@@ -58,13 +62,19 @@ struct basic_inplace_string
     template <class R>
     constexpr explicit basic_inplace_string(R&& r);
 
-    // [string.inplace.iterators], iterator support
+    // [string.iterators], iterators
+    constexpr iterator begin() noexcept;
     constexpr const_iterator begin() const noexcept;
+    constexpr iterator end() noexcept;
     constexpr const_iterator end() const noexcept;
+
+    constexpr reverse_iterator rbegin() noexcept;
+    constexpr const_reverse_iterator rbegin() const noexcept;
+    constexpr reverse_iterator rend() noexcept;
+    constexpr const_reverse_iterator rend() const noexcept;
+
     constexpr const_iterator cbegin() const noexcept;
     constexpr const_iterator cend() const noexcept;
-    constexpr const_reverse_iterator rbegin() const noexcept;
-    constexpr const_reverse_iterator rend() const noexcept;
     constexpr const_reverse_iterator crbegin() const noexcept;
     constexpr const_reverse_iterator crend() const noexcept;
 
@@ -82,21 +92,51 @@ struct basic_inplace_string
 
     // [string.inplace.access], element access
     constexpr const_reference operator[](size_type pos) const;
-    constexpr const_reference at(size_type pos) const; // freestanding-deleted
+    constexpr reference operator[](size_type pos);
+    constexpr const_reference at(size_type n) const; // freestanding-deleted
+    constexpr reference at(size_type n);             // freestanding-deleted
+
     constexpr const_reference front() const;
+    constexpr reference front();
     constexpr const_reference back() const;
-    constexpr const charT* data() const noexcept;
+    constexpr reference back();
 
     // [string.inplace.modifiers], modifiers
-    constexpr basic_inplace_string& operator+=(const basic_string& str);
+    constexpr std::optional<reference> operator+=(const basic_inplace_string& str);
     template <class T>
-    constexpr basic_inplace_string& operator+=(const T& t);
-    constexpr basic_inplace_string& operator+=(const charT* s);
-    constexpr basic_inplace_string& operator+=(charT c);
-    constexpr basic_inplace_string& operator+=(initializer_list<charT>);
+    constexpr std::optional<reference> operator+=(const T& t);
+    constexpr std::optional<reference> operator+=(const charT* s);
+    constexpr std::optional<reference> operator+=(charT c);
+    constexpr std::optional<reference> operator+=(initializer_list<charT>);
+    constexpr std::optional<reference> append(const basic_inplace_string& str);                                    // freestanding-deleted
+    constexpr std::optional<reference> append(const basic_inplace_string& str, size_type pos, size_type n = npos); // freestanding-deleted
+    template <class T>
+    constexpr basic_inplace_string& append(const T& t); // freestanding-deleted
+    template <class T>
+    constexpr basic_inplace_string& append(const T& t, size_type pos, size_type n = npos); // freestanding-deleted
+    constexpr basic_inplace_string& append(const charT* s, size_type n);                   // freestanding-deleted
+    constexpr basic_inplace_string& append(const charT* s);                                // freestanding-deleted
+    constexpr basic_inplace_string& append(const charT* s, size_type pos, size_type n);    // freestanding-deleted
+    constexpr basic_inplace_string& append(size_type n, charT c);                          // freestanding-deleted
+    template <class InputIterator>
+    constexpr basic_inplace_string& append(InputIterator first, InputIterator last); // freestanding-deleted
+    template <container_compatible_range<charT> R>
+    constexpr basic_inplace_string& append_range(R&& rg);            // freestanding-deleted
+    constexpr basic_inplace_string& append(initializer_list<charT>); // freestanding-deleted
+
+    template <class... Args>
+    constexpr optional<reference> try_emplace_back(Args&&... args);
+    constexpr optional<reference> try_push_back(charT x);
+
+    template <class... Args>
+    constexpr reference unchecked_emplace_back(Args&&... args);
+    constexpr reference unchecked_push_back(const T& x);
+    constexpr reference unchecked_push_back(T&& x);
+
     constexpr void remove_prefix(size_type n);
     constexpr void remove_suffix(size_type n);
     constexpr void swap(basic_inplace_string& s) noexcept;
+    constexpr void clear() noexcept;
 
     // [string.inplace.ops], string operations
     constexpr size_type copy(charT* s, size_type n,
@@ -160,6 +200,12 @@ struct basic_inplace_string
     inplace_vector<basic_string_view<charT>, N> data; // exposition only
 };
 
+/*
+basic_inplace_string<string_view<charT>>型は、文字列の連結が可能なstring_view<charT>型である。
+inplace_vector<T>型の記憶域戦略を採用し、その要素をstring_view<charT>型にすることによって
+文字列の連結後はstring_view<charT>をま
+
+*/
 // clang-format off
 inline namespace literals::inline string_literals
 {
@@ -172,4 +218,4 @@ inline namespace literals::inline string_literals
 } // namespace literals::string_literals
 
 // clang-format on
-} // namespace experimental
+} // namespace std::experimental
