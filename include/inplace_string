@@ -197,8 +197,28 @@ struct basic_inplace_string
     constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const;
 
   private:
-    inplace_vector<basic_string_view<charT>, N> data; // exposition only
+    charT data[N]; // exposition only
 };
+
+// clang-format off
+inline namespace literals::inline string_literals
+{
+    // [basic.inplace.literals], suffix for basic_inplace_string literals
+    constexpr inplace_string operator""si(const char* str, size_t len);
+    constexpr inplace_u8string operator""si(const char8_t* str, size_t len);
+    constexpr inplace_u16string operator""si(const char16_t* str, size_t len);
+    constexpr inplace_u32string operator""si(const char32_t* str, size_t len);
+    constexpr inplace_wstring operator""si(const wchar_t* str, size_t len);
+} // namespace literals::string_literals
+
+// clang-format on
+
+template <>
+struct basic_inplace_string<typename string_view<charT>, traits, N>
+{
+  private:
+    inplace_vector<basic_string_view<charT>, N> data; // exposition only
+}
 
 /*
 basic_inplace_string<string_view<charT>>型は、文字列の連結が可能なstring_view<charT>型である。
@@ -206,16 +226,5 @@ inplace_vector<T>型の記憶域戦略を採用し、その要素をstring_view<
 文字列の連結後はstring_view<charT>をま
 
 */
-// clang-format off
-inline namespace literals::inline string_literals
-{
-    // [basic.inplace.literals], suffix for basic_inplace_string literals
-    constexpr string operator""si(const char* str, size_t len);
-    constexpr u8string operator""si(const char8_t* str, size_t len);
-    constexpr u16string operator""si(const char16_t* str, size_t len);
-    constexpr u32string operator""si(const char32_t* str, size_t len);
-    constexpr wstring operator""si(const wchar_t* str, size_t len);
-} // namespace literals::string_literals
 
-// clang-format on
 } // namespace std::experimental
