@@ -23,12 +23,17 @@
 
 namespace std::experimental
 {
+
+template <class charT, class traits>
+constexpr bool ranges::enable_view<basic_string_view<charT, traits>> = true;
+template <class charT, class traits>
+constexpr bool ranges::enable_borrowed_range<basic_string_view<charT, traits>> = true;
 /*
 basic_inplace_string<charT>型は、inplace_vector<T>型の記憶域戦略に基づくbasic_string<charT>型である。
 それ以外は、basic_string<charT>と同じ機能をもつ。
 */
 template <typename charT, typename traits = char_traits<charT>, size_t N = 0>
-struct basic_inplace_string
+struct basic_inplacce_string
 {
   private:
     template <typename CharT>
@@ -210,21 +215,4 @@ inline namespace literals::inline string_literals
     constexpr inplace_u32string operator""si(const char32_t* str, size_t len);
     constexpr inplace_wstring operator""si(const wchar_t* str, size_t len);
 } // namespace literals::string_literals
-
-// clang-format on
-
-template <>
-struct basic_inplace_string<typename string_view<charT>, traits, N>
-{
-  private:
-    inplace_vector<basic_string_view<charT>, N> data; // exposition only
-}
-
-/*
-basic_inplace_string<string_view<charT>>型は、文字列の連結が可能なstring_view<charT>型である。
-inplace_vector<T>型の記憶域戦略を採用し、その要素をstring_view<charT>型にすることによって
-文字列の連結後はstring_view<charT>をま
-
-*/
-
 } // namespace std::experimental
