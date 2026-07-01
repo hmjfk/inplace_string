@@ -23,11 +23,6 @@
 
 namespace std::experimental
 {
-
-template <class charT, class traits>
-constexpr bool ranges::enable_view<basic_string_view<charT, traits>> = true;
-template <class charT, class traits>
-constexpr bool ranges::enable_borrowed_range<basic_string_view<charT, traits>> = true;
 /*
 basic_inplace_string<charT>型は、inplace_vector<T>型の記憶域戦略に基づくbasic_string<charT>型である。
 それ以外は、basic_string<charT>と同じ機能をもつ。
@@ -144,6 +139,11 @@ struct basic_inplacce_string
     constexpr void clear() noexcept;
 
     // [string.inplace.ops], string operations
+    constexpr const charT* c_str() const noexcept;
+    constexpr const charT* data() const noexcept;
+    constexpr charT* data() noexcept;
+
+
     constexpr size_type copy(charT* s, size_type n,
                              size_type pos = 0) const; // freestanding-deleted
 
@@ -202,8 +202,30 @@ struct basic_inplacce_string
     constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const;
 
   private:
-    charT data[N]; // exposition only
+    charT str[N]; // exposition only
 };
+
+// basic_string_view typedef-names
+using inplace_string = basic_inplacce_string<char>;
+using inplace_u8string = basic_inplacce_string<char8_t>;
+using inplace_u16string = basic_inplacce_string<char16_t>;
+using inplace_u32string = basic_inplacce_string<char32_t>;
+using inplace_wstring = basic_inplacce_string<wchar_t>;
+
+// [string.view.hash], hash support
+template <class T>
+struct hash;
+
+template <>
+struct hash<inplace_string>;
+template <>
+struct hash<inplace_u8string>;
+template <>
+struct hash<inplace_u16string>;
+template <>
+struct hash<inplace_u32string>;
+template <>
+struct hash<inplace_wstring>;
 
 // clang-format off
 inline namespace literals::inline string_literals
