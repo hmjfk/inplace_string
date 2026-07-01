@@ -1,5 +1,6 @@
 /*
     inplace_string - 容量固定の文字列型
+    Copyright The GNU Toolchain Authors.
     Copyright (C) 2026 - Denkousi
 
     This program is free software: you can redistribute it and/or modify
@@ -15,6 +16,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+// original Source: https://gcc.gnu.org/cgit/gcc/plain/libstdc++-v3/include/std/inplace_vector
+// This library is a derivative work of libstdc++.
+
 #include <compare>
 #include <initializer_list>
 #include <iterator>
@@ -63,12 +67,16 @@ struct basic_inplacce_string
     constexpr explicit basic_inplace_string(R&& r);
 
     // [string.iterators], iterators
-    constexpr iterator begin() noexcept;
-    constexpr const_iterator begin() const noexcept;
-    constexpr iterator end() noexcept;
-    constexpr const_iterator end() const noexcept;
-
-    constexpr reverse_iterator rbegin() noexcept;
+    constexpr iterator begin() noexcept
+    { return iterator(data()); }
+    constexpr const_iterator begin() const noexcept
+    { return const_iterator(data()); }
+    constexpr iterator end() noexcept
+    { return iterator(); }
+    constexpr const_iterator end() const noexcept
+    { return const_iterator(nullptr); }
+    constexpr reverse_iterator rbegin() noexcept
+    { return reverse_iterator(end()); }
     constexpr const_reverse_iterator rbegin() const noexcept;
     constexpr reverse_iterator rend() noexcept;
     constexpr const_reverse_iterator rend() const noexcept;
@@ -79,15 +87,15 @@ struct basic_inplacce_string
     constexpr const_reverse_iterator crend() const noexcept;
 
     // [string.inplace.capacity], capacity
-    constexpr size_type size() const noexcept;
+    constexpr size_type size() const noexcept
     constexpr size_type length() const noexcept;
-    constexpr size_type max_size() const noexcept;
+    constexpr size_type max_size() const noexcept { return N; }
     constexpr void resize(size_type sz); // freestanding-deleted
     constexpr void resize(size_type sz,
                           const charT& c); // freestanding-deleted
-    constexpr size_type capacity() const noexcept;
-    constexpr void reserve(size_type res_arg);
-    constexpr void shrink_to_fit();
+    constexpr size_type capacity() const noexcept { return N; }
+    constexpr void reserve(size_type res_arg){}
+    constexpr void shrink_to_fit(){}
     constexpr bool empty() const noexcept;
 
     // [string.inplace.access], element access
@@ -142,7 +150,7 @@ struct basic_inplacce_string
     constexpr const charT* c_str() const noexcept;
     constexpr const charT* data() const noexcept;
     constexpr charT* data() noexcept;
-
+    constexpr operator basic_string_view<charT, traits>() const noexcept;
 
     constexpr size_type copy(charT* s, size_type n,
                              size_type pos = 0) const; // freestanding-deleted
@@ -203,6 +211,7 @@ struct basic_inplacce_string
 
   private:
     charT str[N]; // exposition only
+    size_type index;
 };
 
 // basic_string_view typedef-names
