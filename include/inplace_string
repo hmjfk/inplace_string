@@ -32,7 +32,7 @@ basic_inplace_string<charT>型は、inplace_vector<T>型の記憶域戦略に基
 それ以外は、basic_string<charT>と同じ機能をもつ。
 */
 template <typename charT, typename traits = char_traits<charT>, size_t N = 0>
-struct basic_inplacce_string
+struct basic_inplace_string
 {
   private:
     template <typename CharT>
@@ -211,7 +211,7 @@ struct basic_inplacce_string
 
   private:
     charT str[N]; // exposition only
-    size_type index;
+    size_type len;
 };
 
 // basic_string_view typedef-names
@@ -246,4 +246,16 @@ inline namespace literals::inline string_literals
     constexpr inplace_u32string operator""si(const char32_t* str, size_t len);
     constexpr inplace_wstring operator""si(const wchar_t* str, size_t len);
 } // namespace literals::string_literals
+} // namespace std::experimental
+
+// implemention
+namespace std::experimental
+{
+
+template <>
+struct basic_inplace_string<charT, traits, 0>
+{
+  
+};
+
 } // namespace std::experimental
