@@ -24,7 +24,8 @@
 #include <iterator>
 #include <optional>
 #include <string>
-
+#include <string_view>
+#include <utility>
 namespace std::experimental
 {
 /*
@@ -72,37 +73,49 @@ struct basic_inplace_string
     constexpr const_iterator begin() const noexcept
     { return const_iterator(data()); }
     constexpr iterator end() noexcept
-    { return iterator(); }
+    { return iterator(data() + len); }
     constexpr const_iterator end() const noexcept
-    { return const_iterator(nullptr); }
+    { return const_iterator(data() + len); }
     constexpr reverse_iterator rbegin() noexcept
     { return reverse_iterator(end()); }
-    constexpr const_reverse_iterator rbegin() const noexcept;
-    constexpr reverse_iterator rend() noexcept;
-    constexpr const_reverse_iterator rend() const noexcept;
+    constexpr const_reverse_iterator rbegin() const noexcept
+    { return const_reverse_iterator(end()); }
+    constexpr reverse_iterator rend() noexcept
+    { return reverse_iterator(begin()); }
+    constexpr const_reverse_iterator rend() const noexcept
+    { return const_reverse_iterator(begin()); }
 
-    constexpr const_iterator cbegin() const noexcept;
-    constexpr const_iterator cend() const noexcept;
-    constexpr const_reverse_iterator crbegin() const noexcept;
-    constexpr const_reverse_iterator crend() const noexcept;
+    constexpr const_iterator cbegin() const noexcept { return begin(); }
+    constexpr const_iterator cend() const noexcept { return end(); }
+    constexpr const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+    constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
     // [string.inplace.capacity], capacity
     constexpr size_type size() const noexcept
-    constexpr size_type length() const noexcept;
+    {
+        if (len > N)
+          unreachable();
+        else
+          return len;
+    }
+    constexpr size_type length() const noexcept{ return size(); }
     constexpr size_type max_size() const noexcept { return N; }
+#if __STDC_HOSTED__
     constexpr void resize(size_type sz); // freestanding-deleted
     constexpr void resize(size_type sz,
                           const charT& c); // freestanding-deleted
+#endif
     constexpr size_type capacity() const noexcept { return N; }
     constexpr void reserve(size_type res_arg){}
     constexpr void shrink_to_fit(){}
-    constexpr bool empty() const noexcept;
-
+    constexpr bool empty() const noexcept { return len == 0; }
     // [string.inplace.access], element access
-    constexpr const_reference operator[](size_type pos) const;
-    constexpr reference operator[](size_type pos);
+    constexpr const_reference operator[](size_type pos) const { return str[pos]; }
+    constexpr reference operator[](size_type pos) { return str[pos]; }
+#if __STDC_HOSTED__
     constexpr const_reference at(size_type n) const; // freestanding-deleted
     constexpr reference at(size_type n);             // freestanding-deleted
+#endif
 
     constexpr const_reference front() const;
     constexpr reference front();
@@ -116,6 +129,7 @@ struct basic_inplace_string
     constexpr std::optional<reference> operator+=(const charT* s);
     constexpr std::optional<reference> operator+=(charT c);
     constexpr std::optional<reference> operator+=(initializer_list<charT>);
+#if __STDC_HOSTED__
     constexpr std::optional<reference> append(const basic_inplace_string& str);                                    // freestanding-deleted
     constexpr std::optional<reference> append(const basic_inplace_string& str, size_type pos, size_type n = npos); // freestanding-deleted
     template <class T>
@@ -131,6 +145,7 @@ struct basic_inplace_string
     template <container_compatible_range<charT> R>
     constexpr basic_inplace_string& append_range(R&& rg);            // freestanding-deleted
     constexpr basic_inplace_string& append(initializer_list<charT>); // freestanding-deleted
+#endif
 
     template <class... Args>
     constexpr optional<reference> try_emplace_back(Args&&... args);
@@ -152,6 +167,7 @@ struct basic_inplace_string
     constexpr charT* data() noexcept;
     constexpr operator basic_string_view<charT, traits>() const noexcept;
 
+#if __STDC_HOSTED__
     constexpr size_type copy(charT* s, size_type n,
                              size_type pos = 0) const; // freestanding-deleted
 
@@ -170,7 +186,7 @@ struct basic_inplace_string
                           const charT* s) const; // freestanding-deleted
     constexpr int compare(size_type pos1, size_type n1, const charT* s,
                           size_type n2) const; // freestanding-deleted
-
+#endif
     constexpr bool starts_with(basic_inplace_string x) const noexcept;
     constexpr bool starts_with(charT x) const noexcept;
     constexpr bool starts_with(const charT* x) const;
@@ -209,8 +225,9 @@ struct basic_inplace_string
     constexpr size_type find_last_not_of(const charT* s, size_type pos, size_type n) const;
     constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const;
 
+  // exposition only
   private:
-    charT str[N]; // exposition only
+    charT str[N];
     size_type len;
 };
 
@@ -240,11 +257,11 @@ struct hash<inplace_wstring>;
 inline namespace literals::inline string_literals
 {
     // [basic.inplace.literals], suffix for basic_inplace_string literals
-    constexpr inplace_string operator""si(const char* str, size_t len);
-    constexpr inplace_u8string operator""si(const char8_t* str, size_t len);
-    constexpr inplace_u16string operator""si(const char16_t* str, size_t len);
-    constexpr inplace_u32string operator""si(const char32_t* str, size_t len);
-    constexpr inplace_wstring operator""si(const wchar_t* str, size_t len);
+    static inline constexpr inplace_string operator""si(const char* str, size_t len){ return inplace_string{str, len}; }
+    static inline constexpr inplace_u8string operator""si(const char8_t* str, size_t len){ return inplace_u8string{str, len}; }
+    static inline constexpr inplace_u16string operator""si(const char16_t* str, size_t len){ return inplace_u16string{str, len}; }
+    static inline constexpr inplace_u32string operator""si(const char32_t* str, size_t len){ return inplace_u32string{str, len}; }
+    static inline constexpr inplace_wstring operator""si(const wchar_t* str, size_t len){ return inplace_wstring{str, len}; }
 } // namespace literals::string_literals
 } // namespace std::experimental
 
