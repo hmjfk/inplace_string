@@ -19,6 +19,7 @@
 // original Source: https://gcc.gnu.org/cgit/gcc/plain/libstdc++-v3/include/std/inplace_vector
 // This library is a derivative work of libstdc++.
 
+#include <cassert>
 #include <compare>
 #include <initializer_list>
 #include <iterator>
@@ -26,6 +27,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+
 namespace std::experimental
 {
 /*
@@ -110,17 +112,25 @@ struct basic_inplace_string
     constexpr void shrink_to_fit(){}
     constexpr bool empty() const noexcept { return len == 0; }
     // [string.inplace.access], element access
-    constexpr const_reference operator[](size_type pos) const { return str[pos]; }
-    constexpr reference operator[](size_type pos) { return str[pos]; }
+    constexpr const_reference operator[](size_type pos) const
+    {
+        assert(pos < size());
+        return str[pos];
+    }
+    constexpr reference operator[](size_type pos)
+    {
+        assert(pos < size());
+        return str[pos];
+    }
 #if __STDC_HOSTED__
     constexpr const_reference at(size_type n) const; // freestanding-deleted
     constexpr reference at(size_type n);             // freestanding-deleted
 #endif
 
-    constexpr const_reference front() const;
-    constexpr reference front();
-    constexpr const_reference back() const;
-    constexpr reference back();
+    constexpr const_reference front() const { return str[0]; }
+    constexpr reference front() { return str[0]; }
+    constexpr const_reference back() const { return str[len - 1]; }
+    constexpr reference back(){ return str[len - 1]; }
 
     // [string.inplace.modifiers], modifiers
     constexpr std::optional<reference> operator+=(const basic_inplace_string& str);
