@@ -24,7 +24,6 @@
 #include <initializer_list>
 #include <iterator>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
 
@@ -59,21 +58,34 @@ struct basic_inplace_string
 
     // [string.inplace.cons], construct/copy/destroy
     constexpr basic_inplace_string() noexcept{}
-    constexpr basic_inplace_string(const basic_inplace_string&);
 
 #if __STDC_HOSTED__
+    constexpr basic_inplace_string(const basic_inplace_string& str, size_type pos);
+    constexpr basic_inplace_string(const basic_inplace_string& str, size_type pos, size_type n);
+    constexpr basic_inplace_string(basic_inplace_string&& str, size_type pos);
+    constexpr basic_inplace_string(basic_inplace_string&& str, size_type pos, size_type n);
+
+    constexpr explicit basic_inplace_string(size_type n);                   // freestanding-deleted
+    constexpr basic_inplace_string(size_type n, charT c);                   // freestanding-deleted
+    
+    constexpr basic_inplace_string(const charT* s);                         // freestanding-deleted
+    constexpr basic_inplace_string(const charT* s, size_type n);            // freestanding-deleted
+
     template<class T>
     constexpr explicit basic_inplace_string(const T& t);  // freestanding-deleted
+    template<class T>
+    constexpr basic_inplace_string(const T& t, size_type pos, size_type n);           // freestanding-deleted
+
     template<class InputIterator>
     constexpr basic_inplace_string(InputIterator first, InputIterator last);    // freestanding-deleted
-    constexpr basic_inplace_string(const charT* s, size_type n);                 // freestanding-deleted
-    constexpr basic_inplace_string(size_type n, charT c);                 // freestanding-deleted
     //    template<container_compatible_range<charT> R>
 //    constexpr basic_inplace_string(from_range_t, R&& rg);                       // freestanding-deleted
     constexpr basic_inplace_string(initializer_list<charT> il);                 // freestanding-deleted
 #endif
 
-constexpr basic_inplace_string(basic_inplace_string&& str)
+    constexpr basic_inplace_string(const basic_inplace_string&);
+
+    constexpr basic_inplace_string(basic_inplace_string&& str)
     noexcept(N == 0 || is_nothrow_move_constructible_v<T>);
 
     basic_inplace_string(nullptr_t) = delete;
