@@ -57,17 +57,35 @@ struct basic_inplace_string
     using difference_type = ptrdiff_t;
     static constexpr size_type npos = size_type(-1);
 
-    // [string.inplace.cons], construction and assignment
-    constexpr basic_inplace_string() noexcept;
-    constexpr basic_inplace_string(const basic_inplace_string&) noexcept = default;
-    constexpr basic_inplace_string& operator=(const basic_inplace_string&) noexcept = default;
-    constexpr basic_inplace_string(const charT* str);
+    // [string.inplace.cons], construct/copy/destroy
+    constexpr basic_inplace_string() noexcept{}
+    constexpr basic_inplace_string(const basic_inplace_string&);
+
+#if __STDC_HOSTED__
+    template<class T>
+    constexpr explicit basic_inplace_string(const T& t);  // freestanding-deleted
+    template<class InputIterator>
+    constexpr basic_inplace_string(InputIterator first, InputIterator last);    // freestanding-deleted
+    constexpr basic_inplace_string(const charT* s, size_type n);                 // freestanding-deleted
+    constexpr basic_inplace_string(size_type n, charT c);                 // freestanding-deleted
+    //    template<container_compatible_range<charT> R>
+//    constexpr basic_inplace_string(from_range_t, R&& rg);                       // freestanding-deleted
+    constexpr basic_inplace_string(initializer_list<charT> il);                 // freestanding-deleted
+#endif
+
+constexpr basic_inplace_string(basic_inplace_string&& str)
+    noexcept(N == 0 || is_nothrow_move_constructible_v<T>);
+
     basic_inplace_string(nullptr_t) = delete;
-    constexpr basic_inplace_string(const charT* str, size_type len);
-    template <class It, class End>
-    constexpr basic_inplace_string(It begin, End end);
-    template <class R>
-    constexpr explicit basic_inplace_string(R&& r);
+    constexpr ~basic_inplace_string();
+
+    constexpr basic_inplace_string& operator=(const basic_inplace_string& str) noexcept;
+    constexpr basic_inplace_string& operator=(basic_inplace_string&& str)
+    noexcept(N == 0 || (is_nothrow_move_assignable_v<T> && is_nothrow_move_constructible_v<T>));
+    template<class T>
+    constexpr basic_inplace_string& operator=(const T& t);
+    constexpr basic_inplace_string& operator=(charT c);
+    constexpr basic_inplace_string& operator=(initializer_list<charT>); // freestanding-deleted
 
     // [string.iterators], iterators
     constexpr iterator begin() noexcept
