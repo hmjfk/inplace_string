@@ -19,11 +19,29 @@
 // original Source: https://gcc.gnu.org/cgit/gcc/plain/libstdc++-v3/include/std/inplace_vector
 // This library is a derivative work of libstdc++.
 
+// 現在のところ、主要な実装は<optional>が独立環境下にて利用できない。
+
+#include <version>
+#if __STDC_HOSTED__
+#define HAS_OPTIONAL
+#elif defined(__cpp_lib_freestanding_optional)
+    #if __cpp_lib_freestanding_optional >= 202506L
+        #define HAS_OPTIONAL
+    #endif
+#endif
+
 #include <cassert>
 #include <compare>
+#if __STDC_HOSTED__
+#include <ranges>
+#endif
 #include <initializer_list>
 #include <iterator>
+
+#ifdef HAS_OPTIONAL
 #include <optional>
+#endif
+
 #include <string_view>
 #include <utility>
 
@@ -39,6 +57,12 @@ struct basic_inplace_string
   private:
     template <typename CharT>
     using implementation_defined = std::string_view<CharT>::const_iterator;
+
+#if __STDC_HOSTED__
+    template <class R, class T>
+    concept container_compatible_range = // exposition only
+    ranges::input_range<R> && convertible_to<ranges::range_reference_t<R>, T>;
+#endif
 
   public:
     // types
@@ -60,14 +84,14 @@ struct basic_inplace_string
     constexpr basic_inplace_string() noexcept{}
 
 #if __STDC_HOSTED__
-    constexpr basic_inplace_string(const basic_inplace_string& str, size_type pos);
-    constexpr basic_inplace_string(const basic_inplace_string& str, size_type pos, size_type n);
-    constexpr basic_inplace_string(basic_inplace_string&& str, size_type pos);
-    constexpr basic_inplace_string(basic_inplace_string&& str, size_type pos, size_type n);
+    constexpr explicit basic_inplace_string(size_type n); // freestanding-deleted
+    constexpr basic_inplace_string(size_type n, charT c); // freestanding-deleted
 
-    constexpr explicit basic_inplace_string(size_type n);                   // freestanding-deleted
-    constexpr basic_inplace_string(size_type n, charT c);                   // freestanding-deleted
-    
+    constexpr basic_inplace_string(const basic_inplace_string& str, size_type pos); // freestanding-deleted
+    constexpr basic_inplace_string(const basic_inplace_string& str, size_type pos, size_type n); // freestanding-deleted
+    constexpr basic_inplace_string(basic_inplace_string&& str, size_type pos);                   // freestanding-deleted
+    constexpr basic_inplace_string(basic_inplace_string&& str, size_type pos, size_type n);      // freestanding-deleted
+
     constexpr basic_inplace_string(const charT* s);                         // freestanding-deleted
     constexpr basic_inplace_string(const charT* s, size_type n);            // freestanding-deleted
 
@@ -78,8 +102,8 @@ struct basic_inplace_string
 
     template<class InputIterator>
     constexpr basic_inplace_string(InputIterator first, InputIterator last);    // freestanding-deleted
-    //    template<container_compatible_range<charT> R>
-//    constexpr basic_inplace_string(from_range_t, R&& rg);                       // freestanding-deleted
+    template<container_compatible_range<charT> R>
+    constexpr basic_inplace_string(from_range_t, R&& rg);                       // freestanding-deleted
     constexpr basic_inplace_string(initializer_list<charT> il);                 // freestanding-deleted
 #endif
 
@@ -97,8 +121,9 @@ struct basic_inplace_string
     template<class T>
     constexpr basic_inplace_string& operator=(const T& t);
     constexpr basic_inplace_string& operator=(charT c);
+#if __STDC_HOSTED__
     constexpr basic_inplace_string& operator=(initializer_list<charT>); // freestanding-deleted
-
+#endif
     // [string.iterators], iterators
     constexpr iterator begin() noexcept
     { return iterator(data()); }
@@ -134,8 +159,7 @@ struct basic_inplace_string
     constexpr size_type max_size() const noexcept { return N; }
 #if __STDC_HOSTED__
     constexpr void resize(size_type sz); // freestanding-deleted
-    constexpr void resize(size_type sz,
-                          const charT& c); // freestanding-deleted
+    constexpr void resize(size_type sz, const charT& c); // freestanding-deleted
 #endif
     constexpr size_type capacity() const noexcept { return N; }
     constexpr void reserve(size_type res_arg){}
@@ -163,12 +187,16 @@ struct basic_inplace_string
     constexpr reference back(){ return str[len - 1]; }
 
     // [string.inplace.modifiers], modifiers
+#ifdef HAS_OPTIONAL
     constexpr std::optional<reference> operator+=(const basic_inplace_string& str);
     template <class T>
     constexpr std::optional<reference> operator+=(const T& t);
     constexpr std::optional<reference> operator+=(const charT* s);
     constexpr std::optional<reference> operator+=(charT c);
     constexpr std::optional<reference> operator+=(initializer_list<charT>);
+#endif
+#undef HAS_OPTIONAL
+
 #if __STDC_HOSTED__
     constexpr std::optional<reference> append(const basic_inplace_string& str);                                    // freestanding-deleted
     constexpr std::optional<reference> append(const basic_inplace_string& str, size_type pos, size_type n = npos); // freestanding-deleted
@@ -215,16 +243,29 @@ struct basic_inplace_string
                                           size_type n = npos) const; // freestanding-deleted
     constexpr basic_inplace_string subview(size_type pos = 0,
                                            size_type n = npos) const; // freestanding-deleted
+#endif
+    constexpr int compare(basic_inplace_string& str) const noexcept;
 
-    constexpr int compare(basic_inplace_string s) const noexcept;
+#if __STDC_HOSTED__
+    template <class T>
+    constexpr int compare(const T& t) const noexcept(see below);
+    template <class T>
+    constexpr int compare(size_type pos1, size_type n1, const T& t) const;
+    template <class T>
+    constexpr int compare(size_type pos1, size_type n1, const T& t, size_type pos2, size_type n2 = npos) const;
+    constexpr int compare(const basic_string& str) const noexcept;
+    constexpr int compare(size_type pos1, size_type n1, const basic_string& str) const;
+    constexpr int compare(size_type pos1, size_type n1, const basic_string& str, size_type pos2, size_type n2 = npos) const;
+#endif
+    constexpr int compare(const charT* s) const;
+
+#if __STDC_HOSTED__
+    constexpr int compare(size_type pos1, size_type n1, const charT* s) const;
+    constexpr int compare(size_type pos1, size_type n1, const charT* s, size_type n2) const;
     constexpr int compare(size_type pos1, size_type n1,
                           basic_inplace_string s) const; // freestanding-deleted
+
     constexpr int compare(size_type pos1, size_type n1, basic_inplace_string s, size_type pos2,
-                          size_type n2) const; // freestanding-deleted
-    constexpr int compare(const charT* s) const;
-    constexpr int compare(size_type pos1, size_type n1,
-                          const charT* s) const; // freestanding-deleted
-    constexpr int compare(size_type pos1, size_type n1, const charT* s,
                           size_type n2) const; // freestanding-deleted
 #endif
     constexpr bool starts_with(basic_inplace_string x) const noexcept;
