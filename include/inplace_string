@@ -230,10 +230,13 @@ struct basic_inplace_string
     constexpr void clear() noexcept;
 
     // [string.inplace.ops], string operations
-    constexpr const charT* c_str() const noexcept;
-    constexpr const charT* data() const noexcept;
-    constexpr charT* data() noexcept;
-    constexpr operator basic_string_view<charT, traits>() const noexcept;
+    constexpr const charT* c_str() const noexcept { data(); }
+    constexpr const charT* data() const noexcept
+    { static_cast<pointer>(str); }
+    constexpr charT* data() noexcept
+    { static_cast<pointer>(str); }
+    constexpr operator basic_string_view<charT, traits>() const noexcept
+    { return basic_string_view(data(), size()); }
 
 #if __STDC_HOSTED__
     constexpr size_type copy(charT* s, size_type n,
@@ -307,6 +310,7 @@ struct basic_inplace_string
     constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const;
 
   // exposition only
+  // TODO: In the new version, consider whether to use std::inplace_vector for actual memory allocation.
   private:
     charT str[N];
     size_type len;
