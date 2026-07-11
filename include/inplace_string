@@ -20,7 +20,6 @@
 // This library is a derivative work of libstdc++.
 
 // 現在のところ、主要な実装は<optional>が独立環境下にて利用できない。
-
 #include <version>
 #if __STDC_HOSTED__
 #define HAS_OPTIONAL
@@ -32,9 +31,11 @@
 
 #include <cassert>
 #include <compare>
+
 #if __STDC_HOSTED__
 #include <ranges>
 #endif
+
 #include <initializer_list>
 #include <iterator>
 
@@ -43,6 +44,7 @@
 #endif
 
 #include <string_view>
+#include <inplace_vector>
 #include <utility>
 
 namespace std::experimental
@@ -54,9 +56,6 @@ basic_inplace_string<charT>型は、inplace_vector<T>型の記憶域戦略に基
 template <typename charT, typename traits = char_traits<charT>, size_t N = 0>
 struct basic_inplace_string
 {
-  private:
-    template <typename CharT>
-    using implementation_defined = std::string_view<CharT>::const_iterator;
 
 #if __STDC_HOSTED__
     template <class R, class T>
@@ -72,8 +71,8 @@ struct basic_inplace_string
     using const_pointer = const value_type*;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using const_iterator = implementation_defined<charT>; // see [string.inplace.iterators]
-    using iterator = implementation_defined<charT>;       // see [string.inplace.iterators]
+    using const_iterator = inplace_vector<charT, N>::const_iterator; // see [string.inplace.iterators]
+    using iterator = inplace_vector<charT, N>::iterator;             // see [string.inplace.iterators]
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using size_type = size_t;
@@ -82,7 +81,6 @@ struct basic_inplace_string
 
     // [string.inplace.cons], construct/copy/destroy
     constexpr basic_inplace_string() noexcept{}
-
 #if __STDC_HOSTED__
     constexpr explicit basic_inplace_string(size_type n); // freestanding-deleted
     constexpr basic_inplace_string(size_type n, charT c); // freestanding-deleted
@@ -113,7 +111,10 @@ struct basic_inplace_string
     noexcept(N == 0 || is_nothrow_move_constructible_v<T>);
 
     basic_inplace_string(nullptr_t) = delete;
-    constexpr ~basic_inplace_string();
+    
+    constexpr ~basic_inplace_string(){ clear(); }
+    ~basic_inplace_string()
+    requires is_trivially_destructible_v<T> = default;
 
     constexpr basic_inplace_string& operator=(const basic_inplace_string& str) noexcept;
     constexpr basic_inplace_string& operator=(basic_inplace_string&& str)
@@ -124,6 +125,7 @@ struct basic_inplace_string
 #if __STDC_HOSTED__
     constexpr basic_inplace_string& operator=(initializer_list<charT>); // freestanding-deleted
 #endif
+
     // [string.iterators], iterators
     constexpr iterator begin() noexcept
     { return iterator(data()); }
@@ -227,7 +229,11 @@ struct basic_inplace_string
     constexpr void remove_prefix(size_type n);
     constexpr void remove_suffix(size_type n);
     constexpr void swap(basic_inplace_string& s) noexcept;
-    constexpr void clear() noexcept;
+    constexpr void clear() noexcept
+    {
+        std::destroy_n(data(), size_t(len));
+        len = 0;
+    }
 
     // [string.inplace.ops], string operations
     constexpr const charT* c_str() const noexcept { data(); }
