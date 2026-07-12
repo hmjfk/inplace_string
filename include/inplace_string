@@ -46,6 +46,7 @@
 #include <string_view>
 #include <inplace_vector>
 #include <utility>
+#include <memory>
 
 namespace std::experimental
 {
@@ -105,20 +106,14 @@ struct basic_inplace_string
     constexpr basic_inplace_string(initializer_list<charT> il);                 // freestanding-deleted
 #endif
 
-    constexpr basic_inplace_string(const basic_inplace_string&);
-
-    constexpr basic_inplace_string(basic_inplace_string&& str)
-    noexcept(N == 0 || is_nothrow_move_constructible_v<T>);
+    constexpr basic_inplace_string(const basic_inplace_string&) = default;
+    constexpr basic_inplace_string(basic_inplace_string&& str) = default;
 
     basic_inplace_string(nullptr_t) = delete;
-    
-    constexpr ~basic_inplace_string(){ clear(); }
-    ~basic_inplace_string()
-    requires is_trivially_destructible_v<T> = default;
+    constexpr ~basic_inplace_string() = default;
 
     constexpr basic_inplace_string& operator=(const basic_inplace_string& str) noexcept;
-    constexpr basic_inplace_string& operator=(basic_inplace_string&& str)
-    noexcept(N == 0 || (is_nothrow_move_assignable_v<T> && is_nothrow_move_constructible_v<T>));
+    constexpr basic_inplace_string& operator=(basic_inplace_string&& st) noexcept;
     template<class T>
     constexpr basic_inplace_string& operator=(const T& t);
     constexpr basic_inplace_string& operator=(charT c);
@@ -197,7 +192,6 @@ struct basic_inplace_string
     constexpr std::optional<reference> operator+=(charT c);
     constexpr std::optional<reference> operator+=(initializer_list<charT>);
 #endif
-#undef HAS_OPTIONAL
 
 #if __STDC_HOSTED__
     constexpr std::optional<reference> append(const basic_inplace_string& str);                                    // freestanding-deleted
@@ -216,10 +210,12 @@ struct basic_inplace_string
     constexpr basic_inplace_string& append_range(R&& rg);            // freestanding-deleted
     constexpr basic_inplace_string& append(initializer_list<charT>); // freestanding-deleted
 #endif
-
+#ifdef HAS_OPTIONAL
     template <class... Args>
     constexpr optional<reference> try_emplace_back(Args&&... args);
     constexpr optional<reference> try_push_back(charT x);
+#endif
+#undef HAS_OPTIONAL
 
     template <class... Args>
     constexpr reference unchecked_emplace_back(Args&&... args);
@@ -228,7 +224,28 @@ struct basic_inplace_string
 
     constexpr void remove_prefix(size_type n);
     constexpr void remove_suffix(size_type n);
-    constexpr void swap(basic_inplace_string& s) noexcept;
+    constexpr void swap(basic_inplace_string& s) noexcept
+    {
+        basic_inplace_string* vs[2]{ this, std::addressof(s) };
+        const auto smaller = vs[s.size() < size()];
+        const auto bigger = vs[s.size() >= size()];
+        size_type n = smaller->size();
+        size_type n2 = bigger->size();
+
+        for (size_type i = n; i < n2; ++i)
+        {
+            std::construct_at(smaller->data() + i, std::move(*(bigger->data() + i)));
+            std::destroy_at(bigger->data() + i);
+        }
+        
+        smaller->len = n2;
+        bigger->len = n;
+
+        using std::swap;
+        for (size_type i = 0; i < n; i++)
+            swap(str[i], s.str[i]);
+    }
+    
     constexpr void clear() noexcept
     {
         std::destroy_n(data(), size_t(len));
